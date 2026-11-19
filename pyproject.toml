@@ -1,0 +1,48 @@
+[tool.black]
+line-length = 120
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | build
+)/
+'''
+
+[tool.pyrefly]
+project-includes = ["**/*"]
+project-excludes = ["**/*venv/**/*"]
+
+[tool.docwrap]
+line-length = 120
+reflow = "full"
+style = "google"
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.format]
+# Collapse short multiline calls, collections, and expressions even with trailing commas.
+skip-magic-trailing-comma = true
+
+[tool.ruff.lint]
+# Enable all `pydocstyle` rules, limiting to those that adhere to the
+# Google convention via `convention = "google"`, below.
+select = ["D", "F"]
+
+# - On top of the Google convention, disable `D417`, which requires documentation for every function parameter.
+# - F841: local variable assigned but never used (exluced to favor readability)
+# TODO: Remove D10 once we are about to release to get all the docstrings written
+ignore = ["D417", "D10", "F841"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+# Section to exclude errors for different file types
+[tool.ruff.lint.per-file-ignores]
+# Ignore all directories named `tests`.
+"tests/**" = ["D"]
+# Ignore all files that end in `_test.py`.
+"*_test.py" = ["D"]
+# Ignore F401 (import but unused) in __init__.py
+"__init__.py" = ["F401"]

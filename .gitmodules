@@ -1,0 +1,4 @@
+[submodule "train_codebase"]
+	path = train_codebase
+	url = https://github.com/xuanduy04/ordures_ultra_v3.git
+	branch = hihihirarara
