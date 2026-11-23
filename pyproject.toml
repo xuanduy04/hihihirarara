@@ -12,6 +12,7 @@ exclude = '''
 [tool.pyrefly]
 project-includes = ["**/*"]
 project-excludes = ["**/*venv/**/*"]
+search-path = ["train_data/nemo_gym/_processors"]
 
 [tool.docwrap]
 line-length = 120

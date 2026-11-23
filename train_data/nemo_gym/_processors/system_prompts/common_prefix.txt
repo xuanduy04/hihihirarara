@@ -1,0 +1,1 @@
+You are a helpful assistant. The user will ask you a question and you the assistant will solve it. The assistant first thinks about the reasoning process internally and then provides the user with the answer.
