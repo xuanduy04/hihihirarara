@@ -1,0 +1,68 @@
+defaults: "core.yaml"
+
+# =============================================================================
+# Cluster
+# =============================================================================
+cluster:
+  num_generation: 4
+  num_training: 4
+
+# =============================================================================
+# GRPO Algorithm
+# =============================================================================
+grpo:
+  seed: 2212
+
+  # Advantage estimators
+  advantage_estimator:
+    name: "subconfigs_should_properly_configure_the advantage_estimator"
+  # Advantage estimators: End
+
+# =============================================================================
+# Policy
+# =============================================================================
+policy:
+  model_name: "subconfigs_should_properly_configure_the policy.model_name"
+  tokenizer:
+    name: ${policy.model_name}
+    chat_template_kwargs: null
+  hf_config_overrides: {}
+
+  megatron_cfg:
+    empty_unused_memory_level: 2
+
+    # Parallelism
+    tensor_model_parallel_size: 4
+    expert_model_parallel_size: 4
+    context_parallel_size: 1
+
+    # MoE
+    moe_permute_fusion: false
+
+    # Compute
+    apply_rope_fusion: false
+    gradient_accumulation_fusion: false
+
+    optimizer:
+      lr: 1.0e-6
+      min_lr: ${policy.megatron_cfg.optimizer.lr}
+
+    scheduler:
+      lr_warmup_init: 1.0e-7
+  # ---------------------------------------------------------------------------
+  # Generation (vLLM) Non-colocated, async
+  # ---------------------------------------------------------------------------
+  generation:
+    # EP > TP blocked by https://github.com/NVIDIA-NeMo/RL/issues/1101.
+    vllm_cfg:
+      kv_cache_dtype: "auto"
+      tensor_parallel_size: 2
+      expert_parallel_size: 2
+      gpu_memory_utilization: 0.9
+      http_server_serving_chat_kwargs:
+        # tool_parser: glm47
+        reasoning_parser: glm45
+    vllm_kwargs:
+      # attention_backend: FLASH_ATTN  # most models can turn this one on, not GLM-4.7-Flash, though.
+      max_num_seqs: 128
+      max_num_batched_tokens: 131072

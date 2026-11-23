@@ -1,0 +1,58 @@
+defaults: "core.yaml"
+
+# =============================================================================
+# Cluster
+# =============================================================================
+cluster:
+  num_generation: 1
+  num_training: 1
+
+# =============================================================================
+# GRPO Algorithm
+# =============================================================================
+grpo:
+  seed: 2212
+
+  # Advantage estimators
+  advantage_estimator:
+    name: "subconfigs_should_properly_configure_the advantage_estimator"
+  # Advantage estimators: End
+
+# =============================================================================
+# Policy
+# =============================================================================
+policy:
+  model_name: "subconfigs_should_properly_configure_the policy.model_name"
+  tokenizer:
+    name: ${policy.model_name}
+    chat_template_kwargs: null
+  hf_config_overrides: {}
+
+  megatron_cfg:
+    empty_unused_memory_level: 2
+
+    # Parallelism: 
+    #   Reminder, Qwen3-8B is a dense model
+    tensor_model_parallel_size: 1
+    context_parallel_size: 1
+
+    optimizer:
+      lr: 1.0e-6
+      min_lr: ${policy.megatron_cfg.optimizer.lr}
+
+    scheduler:
+      lr_warmup_init: 1.0e-7
+  # ---------------------------------------------------------------------------
+  # Generation (vLLM) Non-colocated, async
+  # ---------------------------------------------------------------------------
+  generation:
+    vllm_cfg:
+      kv_cache_dtype: "auto"
+      tensor_parallel_size: 1
+      gpu_memory_utilization: 0.9
+      http_server_serving_chat_kwargs:
+        reasoning_parser: qwen3
+    vllm_kwargs:
+      attention_backend: FLASH_ATTN
+      max_num_seqs: 256
+      max_num_batched_tokens: 131072
