@@ -12,9 +12,14 @@ source "${NEMO_RL_UTILS_DIR}/use_custom_opt.sh" "${NEMO_RL_BASE_DIR}"
 bash "${NEMO_RL_UTILS_DIR}/copy_gym_venvs.sh" "${CONFIG_PATH}"
 
 # ======================== Auto set constants ======================== #
+# Read config general helper
+read_config() {
+    python "${NEMO_RL_UTILS_DIR}/read_yaml.py" "${CONFIG_PATH}" "$1"
+}
+
 # >>> 1. Check for invalid configurations >>> #
-N_GEN="$(python "${NEMO_RL_UTILS_DIR}/read_yaml.py" "${CONFIG_PATH}" "cluster.num_generation")"
-N_TRAIN="$(python "${NEMO_RL_UTILS_DIR}/read_yaml.py" "${CONFIG_PATH}" "cluster.num_training")"
+N_GEN="$(read_config "cluster.num_generation")"
+N_TRAIN="$(read_config "cluster.num_training")"
 
 # N_NODES and N_GPUS_PER_NODE
 case "$IS_MULTINODE_TRAINING" in
@@ -72,7 +77,7 @@ auto_detect_exp_num() {
 
 # *Main
 OUTPUT_DIR="${ROOT_DIR}/train_outputs"
-MODEL_NAME="$(basename "$(python "${NEMO_RL_UTILS_DIR}/read_yaml.py" "${CONFIG_PATH}" "policy.model_name")")"
+MODEL_NAME="$(basename "$(read_config "policy.model_name")")"
 
 if [[ "$EXP_NUM" =~ ^[0-9]+$ ]]; then
     EXP_NUM=$(printf "%03d" $((10#$EXP_NUM)))
@@ -109,7 +114,7 @@ export NRL_VLLM_ASYNC_TIMEOUT_SECONDS=36000
 export TORCH_NCCL_BLOCKING_WAIT=1
 export NCCL_TIMEOUT=36000
 
-# =============================== Helpers =============================== #
+# =============================== Sub-script helpers =============================== #
 
 wait_until_success() {
     local WAIT_TIMEOUT=1800
@@ -145,6 +150,14 @@ time_since() {
 # =============================== main python call =============================== #
 
 main_python_call() {
+    local data_path="${ROOT_DIR}/train_data/nemo_gym/data"
+    local prompt_batch_size="$(read_config "grpo.num_prompts_per_step")"
+    case "${MODEL_NAME,,}" in
+        *mistral*|*magistral*) data_path="${data_path}/mistral" ;;
+        *)                     data_path="${data_path}/common" ;;
+    esac
+    data_path="${data_path}/combined_data_${prompt_batch_size}.jsonl"
+
     # Base commands
     training_cmd_args=(
         "${NEMO_RL_BASE_DIR}/examples/nemo_gym/run_grpo_nemo_gym.py"
@@ -152,6 +165,8 @@ main_python_call() {
         "++checkpointing.checkpoint_dir=${CHECKPOINT_DIR}"
         "++env.nemo_gym.nemo_gym_log_dir=${LOG_DIR}/nemo_gym"
         "++logger.log_dir=${LOG_DIR}"
+        # data
+        "++data.train=[{data_path:${data_path}}]"
         # node assignment
         "++cluster.gpus_per_node=${N_GPUS_PER_NODE}"
         "++cluster.num_nodes=${N_NODES}"
