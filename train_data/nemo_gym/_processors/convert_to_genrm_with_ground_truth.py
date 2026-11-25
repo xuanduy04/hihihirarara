@@ -269,7 +269,7 @@ def main() -> None:
     dataset: str = args.dataset.strip()
     skip_on_error: bool = args.skip_on_error
     allow_unknown_tool_keys: bool = args.allow_unknown_tool_keys
-    system_prompt: str = get_system_prompt(args.is_mistral_model)
+    system_prompt: str = get_system_prompt(args.is_mistral_model, is_instruct_data=True)
 
     if not dataset:
         logger.info("--dataset is empty; the 'dataset' field will be omitted from all output rows.")
