@@ -2,7 +2,7 @@
 
 # Usage: source core.sh after
 #       setting  SCRIPT_DIR, ROOT_DIR
-#       entering CONFIG_PATH, EXP_NUM and IS_MULTINODE_TRAINING
+#       entering CONFIG_PATH, EXP_NUM, ADV_ESTIMATOR and IS_MULTINODE_TRAINING
 
 # ============================ Custom OPT ============================ #
 NEMO_RL_BASE_DIR="${ROOT_DIR}/train_codebase"
@@ -36,17 +36,9 @@ if (( N_NODES * N_GPUS_PER_NODE > WORLD_SIZE )); then
     exit 0
 fi
 
-# check if reasoning parser file exists
-# HUMAN_TODO: check if any of our models need this feature
-# model_reasoning_parser="$(python "${NEMO_RL_UTILS_DIR}/read_yaml.py" "${CONFIG_PATH}" "policy.generation.vllm_cfg.http_server_serving_chat_kwargs.reasoning_parser")"
-# if [ "$model_reasoning_parser" = "super_v3" ]; then
-#     if [ ! -f "${NEMO_RL_BASE_DIR}/nemo_rl/utils/super_v3_reasoning_parser.py" ]; then
-#         printf "[ERROR] missing 'super_v3' reasoning parser plugin from NeMo-RL codebase. It should be at:\n"
-#         printf "\t${NEMO_RL_BASE_DIR}/nemo_rl/utils/super_v3_reasoning_parser.py\n"
-#         exit 0
-#     fi
-# fi
-
+ADV_ESTIMATOR_OVERRIDE="$(python "${SCRIPT_DIR}/utils/parse_advantage_estimator.py" "${ADV_ESTIMATOR}")"
+ADV_ESTIMATOR="${ADV_ESTIMATOR_OVERRIDE%% *}"
+ADV_ESTIMATOR_OVERRIDE="${ADV_ESTIMATOR_OVERRIDE#* }"
 
 # >>> 2. Create and assign variables based on config >>> #
 
@@ -82,9 +74,9 @@ MODEL_NAME="$(basename "$(read_config "policy.model_name")")"
 if [[ "$EXP_NUM" =~ ^[0-9]+$ ]]; then
     EXP_NUM=$(printf "%03d" $((10#$EXP_NUM)))
 else
-    EXP_NUM=$(auto_detect_exp_num "$OUTPUT_DIR" "${MODEL_NAME}-exp")
+    EXP_NUM=$(auto_detect_exp_num "$OUTPUT_DIR" "${MODEL_NAME}-${ADV_ESTIMATOR}-exp")
 fi
-EXP_DIR="${OUTPUT_DIR}/${MODEL_NAME}-exp${EXP_NUM}"
+EXP_DIR="${OUTPUT_DIR}/${MODEL_NAME}-${ADV_ESTIMATOR}-exp${EXP_NUM}"
 
 # LOG directories
 LOG_DIR="${EXP_DIR}/logs"
@@ -172,6 +164,8 @@ main_python_call() {
         "++cluster.num_nodes=${N_NODES}"
         "++policy.generation.colocated.resources.gpus_per_node=${GEN_GPUS_PER_NODE}"
         "++policy.generation.colocated.resources.num_nodes=${GEN_NODES}"
+        # advantage estimator
+        "${ADV_ESTIMATOR_OVERRIDE}"
     )
 
     # Conditional commands

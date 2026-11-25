@@ -4,12 +4,15 @@ ROOT_DIR="$(cd "${SCRIPT_DIR}/../" && pwd)"
 
 # ------------------------------------------------------------------ #
 # ENTER CONFIG NAME HERE
-CONFIG_PATH="${SCRIPT_DIR}/configs/${1:-core.yaml}"
+CONFIG_PATH="${SCRIPT_DIR}/configs/"
+# ENTER ADVANTAGE ESTIMATOR HERE
+ADV_ESTIMATOR=""
 # ENTER EXPERIMENT NUMBER HERE (for resuming experiments)
 EXP_NUM="auto"  # any number that is not an integer will use auto detection methods instead
 
 
 IS_MULTINODE_TRAINING=True
+source "${SCRIPT_DIR}/cli.sh" "$@"
 source "${SCRIPT_DIR}/core.sh"
 
 # =============================== RAY =============================== #
