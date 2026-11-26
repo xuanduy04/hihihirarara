@@ -13,7 +13,8 @@ Arguments:
 Options:
   --config        (Optional) Same as CONFIG. Setting both will result in undefined behaviour.
   -a, --adv, --advantage, --advantage-estimator
-                  (Optional) Formal advantage estimator name: grpo, dr.grpo, reinforce++, reinforce++perenv, jspo.
+                  (Optional) Formal advantage estimator name: rloo, grpo, dr.grpo, reinforce++, krpo, jspo,
+                  reinforce_with_moving_average_baseline, tan, tmn.
   -e, -r, --exp, --experiment, --resume
                   (Optional) Experiment number to resume. Non-integers (e.g. 'auto') start a new experiment.
   -h, --help      Show this help.
