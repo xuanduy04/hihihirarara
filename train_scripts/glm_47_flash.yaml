@@ -41,7 +41,6 @@ policy:
 
     # Compute
     apply_rope_fusion: false
-    gradient_accumulation_fusion: false
 
     optimizer:
       lr: 1.0e-6

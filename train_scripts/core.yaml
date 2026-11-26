@@ -154,7 +154,7 @@ policy:
 
     # Compute
     apply_rope_fusion: true
-    gradient_accumulation_fusion: true
+    gradient_accumulation_fusion: false
     use_fused_weighted_squared_relu: true
     bias_activation_fusion: false
     defer_fp32_logits: true
