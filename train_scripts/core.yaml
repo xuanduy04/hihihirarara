@@ -5,9 +5,9 @@ cluster:
   num_generation: 1
   num_training: 1
 
-  genrm_judge:
-    genrm_server_url: TO_BE_FILLED
-    genrm_model: nvidia/Qwen3-Nemotron-235B-A22B-GenRM-2603
+  llm_judge:
+    llm_judge_server_url: TO_BE_FILLED
+    llm_judge_model: DeepSeek-V4.1-Flash-1017
 
   # Below 2 variables are AUTOmatically set using the above information
   gpus_per_node: null
@@ -337,11 +337,9 @@ env:
       - responses_api_models/vllm_model/configs/vllm_model_for_training.yaml
       # --- self-contained (no judge) --- #
       - resources_servers/code_gen/configs/code_gen.yaml
-      - resources_servers/countdown/configs/countdown.yaml
-      - resources_servers/knight_and_knave/configs/knight_and_knave.yaml
       - resources_servers/math_with_judge/configs/math_with_judge.yaml
-      #  --- GenRM compare --- #
-      - resources_servers/genrm_with_ground_truth/configs/genrm_with_ground_truth.yaml
+      #  --- LLM Judge --- #
+      - resources_servers/llm_judge_with_ground_truth/configs/llm_judge_with_ground_truth.yaml
 
     # Increase the num workers to help with the serialization/deserialization overhead of token IDs
     policy_model:
@@ -381,16 +379,15 @@ env:
         knight_and_knave:
           num_processes: 8
 
-    genrm_with_ground_truth_resources_server:
+    llm_judge_with_ground_truth_resources_server:
       resources_servers:
-        genrm_with_ground_truth:
-          genrm_server_url: ${cluster.genrm_judge.genrm_server_url}
-          genrm_model: ${cluster.genrm_judge.genrm_model}
-          genrm_responses_create_params:
+        llm_judge_with_ground_truth:
+          llm_judge_server_url: ${cluster.llm_judge.llm_judge_server_url}
+          llm_judge_model: ${cluster.llm_judge.llm_judge_model}
+          llm_judge_responses_create_params:
             temperature: 0.6
             top_p: 0.95
-          use_principle: true
-          default_principle: "You will be given one or more evaluation criteria (rubrics).\nEvaluate both responses on EACH criterion individually first, then synthesize an overall judgment.\nCriteria:\n\n1. Please act as an impartial judge and evaluate the quality of the responses provided by two AI assistants to the user prompt. Begin your evaluation by generating your own answer to the prompt. You must provide your answer before judging any answers. When evaluating the assistants' answers, compare both assistants' answers with your answer. You must identify and correct any mistakes or inaccurate information. Then consider if the assistant's answers are helpful, relevant, and concise. Helpful means the answer correctly responds to the prompt or follows the instructions. Note when user prompt has any ambiguity or more than one interpretation, it is more helpful and appropriate to ask for clarifications or more information from the user than providing an answer based on assumptions. Relevant means all parts of the response closely connect or are appropriate to what is being asked. Concise means the response is clear and not verbose or excessive. Then consider the creativity and novelty of the assistant's answers when needed. Finally, identify any missing important information in the assistants' answers that would be beneficial to include when responding to the user prompt."
+          llm_judge_endpoint_max_concurrency: 1024
 
     math_with_judge:
       resources_servers:

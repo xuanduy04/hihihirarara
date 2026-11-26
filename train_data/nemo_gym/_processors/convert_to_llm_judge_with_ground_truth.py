@@ -14,7 +14,7 @@ from system_prompts import get_system_prompt
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
-AGENT_NAME = "genrm_with_ground_truth_simple_agent"
+AGENT_NAME = "llm_judge_with_ground_truth_simple_agent"
 
 
 def _preprocess_underscore_args(argv: list[str]) -> list[str]:
@@ -147,7 +147,7 @@ def _convert_entry(
     allow_unknown_tool_keys: bool,
     system_prompt: str,
 ) -> dict:
-    """Convert one raw entry to the genrm_with_ground_truth JSONL schema."""
+    """Convert one raw entry to the llm_judge_with_ground_truth JSONL schema."""
     prompt = entry.get(prompt_field, "")
 
     if not prompt or not str(prompt).strip():
@@ -162,10 +162,18 @@ def _convert_entry(
             raise ValueError("Entry has invalid chat template format: missing 'content' field in (at least) 1 turn")
         _input = _convert_chat_template_to_nemo_gym(prompt)
         _input.insert(0, {"type": "message", "role": "system", "content": system_prompt})
+        question_str = None
+        for i in range(len(prompt) - 1, -1, -1):
+            if prompt[i]["role"] == "user":
+                question_str = str(prompt[i]["content"]).strip()
+                break
+        if question_str is None:
+            raise ValueError("Entry has invalid chat template format: no 'user' turn found")
     else:
+        question_str = str(prompt).strip()
         _input = [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": str(prompt).strip()},
+            {"role": "user", "content": question_str},
         ]
 
     raw_ground_truth = entry.get(ground_truth_field)
@@ -188,6 +196,7 @@ def _convert_entry(
 
     out: dict = {
         "responses_create_params": responses_create_params,
+        "question": question_str,
         "ground_truth": ground_truth,
         "agent_ref": {"type": "responses_api_agents", "name": AGENT_NAME},
     }
@@ -200,14 +209,14 @@ def _convert_entry(
 def main() -> None:
     sys.argv = _preprocess_underscore_args(sys.argv)
 
-    parser = argparse.ArgumentParser(description="Convert a JSON/JSONL dataset to genrm_with_ground_truth format.")
+    parser = argparse.ArgumentParser(description="Convert a JSON/JSONL dataset to llm_judge_with_ground_truth format.")
     parser.add_argument("input", type=Path, help="Path to the input data file (must be a .jsonl).")
     parser.add_argument(
         "--output",
         type=Path,
         help=(
             "Path to the output JSONL file (must end with .jsonl). "
-            "Defaults to '../data/genrm_with_ground_truth/tulu_if{_mistral,_common}.jsonl' relative to this script's directory."
+            "Defaults to '../data/llm_judge_with_ground_truth/tulu_if{_mistral,_common}.jsonl' relative to this script's directory."
         ),
     )
     parser.add_argument(
@@ -260,7 +269,7 @@ def main() -> None:
         if args.output is not None
         else Path(__file__).resolve().parent.parent
         / "data"
-        / "genrm_with_ground_truth"
+        / "llm_judge_with_ground_truth"
         / f"tulu_if{'_mistral' if args.is_mistral_model else '_common'}.jsonl"
     )
     prompt_field: str = args.prompt_field

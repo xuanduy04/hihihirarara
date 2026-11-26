@@ -157,9 +157,9 @@ def _conversion_commands() -> list[tuple[str, list[str], list[Path]]]:
         )
     )
     commands += _variant_commands(
-        SCRIPT_DIR / "convert_to_genrm_with_ground_truth.py",
+        SCRIPT_DIR / "convert_to_llm_judge_with_ground_truth.py",
         tulu_if_dedup,
-        "genrm_with_ground_truth",
+        "llm_judge_with_ground_truth",
         "tulu_if_processed",
         genrm_extra_args,
     )
