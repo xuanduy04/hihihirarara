@@ -369,18 +369,14 @@ env:
           num_processes: 64
           unit_test_timeout_secs: 10
           debug: false
-    
-    countdown:
-      resources_servers:
-        countdown:
-          num_processes: 8
-      
-    knight_and_knave:
-      resources_servers:
-        knight_and_knave:
-          num_processes: 8
 
-    llm_judge_with_ground_truth_resources_server:
+    math_with_judge:
+      resources_servers:
+        math_with_judge:
+          num_processes: 8
+          should_use_judge: false
+
+    llm_judge_with_ground_truth:
       resources_servers:
         llm_judge_with_ground_truth:
           llm_judge_server_url: ${cluster.llm_judge.llm_judge_server_url}
@@ -389,12 +385,6 @@ env:
             temperature: 0.6
             top_p: 0.95
           llm_judge_endpoint_max_concurrency: 1024
-
-    math_with_judge:
-      resources_servers:
-        math_with_judge:
-          num_processes: 8
-          should_use_judge: false
 
 # =============================================================================
 # Logger

@@ -15,8 +15,15 @@ read_config() {
 }
 
 # >>> 1. Check for invalid configurations >>> #
-N_GEN="$(read_config "cluster.num_generation")"
-N_TRAIN="$(read_config "cluster.num_training")"
+if [[ "$ALL_GPUS" == True ]]; then
+    N_VISIBLE_GPUS="$(nvidia-smi -L | grep -c ^GPU)"
+    N_GEN=$(( (N_VISIBLE_GPUS + 1) / 2 ))
+    N_TRAIN=$(( N_VISIBLE_GPUS / 2 ))
+    printf "[INFO] --all-gpus: generation uses ${N_GEN} GPUs, training uses ${N_TRAIN} GPUs.\n"
+else
+    N_GEN="$(read_config "cluster.num_generation")"
+    N_TRAIN="$(read_config "cluster.num_training")"
+fi
 
 # N_NODES and N_GPUS_PER_NODE
 case "$IS_MULTINODE_TRAINING" in
@@ -151,6 +158,7 @@ main_python_call() {
         *)                     data_path="${data_path}/common" ;;
     esac
     data_path="${data_path}/combined_data_${prompt_batch_size}.jsonl"
+    token_ids_override="$(python "${SCRIPT_DIR}/utils/parse_token_ids.py" "$(read_config "policy.model_name")")"
 
     # Base commands
     training_cmd_args=(
@@ -168,6 +176,8 @@ main_python_call() {
         "++policy.generation.colocated.resources.num_nodes=${GEN_NODES}"
         # advantage estimator
         "${ADV_ESTIMATOR_OVERRIDE}"
+        # token ids
+        "${token_ids_override}"
     )
 
     # Conditional commands

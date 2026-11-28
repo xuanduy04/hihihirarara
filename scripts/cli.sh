@@ -5,7 +5,7 @@
 display_help() {
     cat << EOF
 Usage:
-  $(basename "$0") [CONFIG] [--config CONFIG] [-e EXP_NUM] -a ADV_ESTIMATOR
+  $(basename "$0") [CONFIG] [--config CONFIG] [-e EXP_NUM] -a ADV_ESTIMATOR [--all-gpus]
 Description:
   Launches GRPO + NeMo-Gym training. Values given here override the ones entered in the script.
 Arguments:
@@ -17,6 +17,9 @@ Options:
                   reinforce_with_moving_average_baseline, tan, tmn.
   -e, -r, --exp, --experiment, --resume
                   (Optional) Experiment number to resume. Non-integers (e.g. 'auto') start a new experiment.
+  --all, --all-gpu, --all-gpus
+                  (Optional, single-node only) Split all visible GPUs between generation and training,
+                  generation taking the odd one out. Parallelism settings are left to the config.
   -h, --help      Show this help.
 Example:
   bash $(basename "$0") qwen3-4b.yaml -a dr.grpo
@@ -31,8 +34,9 @@ if [[ $# -gt 0 && ! "$1" =~ ^- ]]; then
 fi
 
 while [[ $# -gt 0 ]]; do
-    [[ $# -ge 2 ]] || display_help
+    [[ $# -ge 2 || "$1" =~ ^--all ]] || display_help
     case $1 in
+        --all|--all-gpu|--all-gpus) [[ "$IS_MULTINODE_TRAINING" == False ]] || display_help; ALL_GPUS=True; shift ;;
         --config) CONFIG_PATH="$(realpath "$2")"; shift 2 ;;
         -a|--a|--adv|--advantage|--advantage-estimator) ADV_ESTIMATOR="$2"; shift 2 ;;
         -e|-r|--exp|--experiment|--resume) EXP_NUM="$2"; shift 2 ;;
