@@ -57,11 +57,13 @@ policy:
       kv_cache_dtype: "auto"
       tensor_parallel_size: 2
       expert_parallel_size: 2
-      gpu_memory_utilization: 0.9
+      gpu_memory_utilization: 0.9567
       http_server_serving_chat_kwargs:
         # tool_parser: glm47
         reasoning_parser: glm45
     vllm_kwargs:
       # attention_backend: FLASH_ATTN  # most models can turn this one on, not GLM-4.7-Flash, though.
-      max_num_seqs: 128
-      max_num_batched_tokens: 131072
+      max_num_seqs: 640
+      max_num_batched_tokens: 16384
+      compilation_config:
+        max_cudagraph_capture_size: 640

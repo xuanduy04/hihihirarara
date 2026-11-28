@@ -49,10 +49,10 @@ policy:
     vllm_cfg:
       kv_cache_dtype: "auto"
       tensor_parallel_size: 1
-      gpu_memory_utilization: 0.9
+      gpu_memory_utilization: 0.9567
       http_server_serving_chat_kwargs:
         reasoning_parser: mistral
     vllm_kwargs:
       attention_backend: FLASH_ATTN
-      max_num_seqs: 128
-      max_num_batched_tokens: 131072
+      max_num_seqs: 192
+      max_num_batched_tokens: 8192

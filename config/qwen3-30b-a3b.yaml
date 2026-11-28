@@ -50,10 +50,12 @@ policy:
       kv_cache_dtype: "auto"
       tensor_parallel_size: 2
       expert_parallel_size: 2
-      gpu_memory_utilization: 0.9
+      gpu_memory_utilization: 0.9567
       http_server_serving_chat_kwargs:
         reasoning_parser: qwen3
     vllm_kwargs:
       attention_backend: FLASH_ATTN
-      max_num_seqs: 256
-      max_num_batched_tokens: 131072
+      max_num_seqs: 704
+      max_num_batched_tokens: 16384
+      compilation_config:
+        max_cudagraph_capture_size: 704
