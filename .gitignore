@@ -48,9 +48,6 @@ pyrefly.toml
 *runtime_env.yaml
 !default_runtime_env.yaml
 
-data/
-
-# I don't use claude
 CLAUDE.md
 
 # Local working files (not part of the release)

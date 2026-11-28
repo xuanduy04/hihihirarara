@@ -8,9 +8,6 @@
 NEMO_RL_BASE_DIR="${ROOT_DIR}/train_codebase"
 NEMO_RL_UTILS_DIR="${NEMO_RL_BASE_DIR}/custom_utils/utils_training"
 
-source "${NEMO_RL_UTILS_DIR}/use_custom_opt.sh" "${NEMO_RL_BASE_DIR}"
-bash "${NEMO_RL_UTILS_DIR}/copy_gym_venvs.sh" "${CONFIG_PATH}"
-
 # ======================== Auto set constants ======================== #
 # Read config general helper
 read_config() {
@@ -93,7 +90,7 @@ export HUGGINGFACE_HUB_CACHE="${EXP_DIR}/cache/huggingface/models"
 # checkpoint directory
 CHECKPOINT_DIR="${EXP_DIR}/ckpt"
 
-# Directories are made after all nodes are in-sync
+# Experiment directories are made after all nodes are in-sync
 make_exp_dirs() {
     mkdir -p "${LOG_DIR}/nemo_gym" "${RUN_LOG_DIR}" "${CHECKPOINT_DIR}" \
         "${NRL_MEGATRON_CHECKPOINT_DIR}" "${VLLM_CACHE_ROOT}" "${HF_DATASETS_CACHE}" "${HUGGINGFACE_HUB_CACHE}"
@@ -105,6 +102,11 @@ export NRL_IGNORE_VERSION_MISMATCH=1
 export NRL_VLLM_ASYNC_TIMEOUT_SECONDS=36000
 export TORCH_NCCL_BLOCKING_WAIT=1
 export NCCL_TIMEOUT=36000
+
+# =============================== Use train_codebase as /opt =============================== #
+# This is called now, after configs have been confirmed to be accurate
+source "${NEMO_RL_UTILS_DIR}/use_custom_opt.sh" "${NEMO_RL_BASE_DIR}"
+bash "${NEMO_RL_UTILS_DIR}/copy_gym_venvs.sh" "${CONFIG_PATH}"
 
 # =============================== Sub-script helpers =============================== #
 
@@ -142,7 +144,7 @@ time_since() {
 # =============================== main python call =============================== #
 
 main_python_call() {
-    local data_path="${ROOT_DIR}/train_data/nemo_gym/data"
+    local data_path="${ROOT_DIR}/data/nemo_gym/data"
     local prompt_batch_size="$(read_config "grpo.num_prompts_per_step")"
     case "${MODEL_NAME,,}" in
         *mistral*|*magistral*) data_path="${data_path}/mistral" ;;

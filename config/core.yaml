@@ -207,7 +207,7 @@ policy:
       override_opt_param_scheduler: true
 
     distributed_data_parallel_config:
-      grad_reduce_in_fp32: false  # BIG MODELS should probably set this to false.
+      grad_reduce_in_fp32: true  # BIG MODELS should probably set this to false.
       overlap_grad_reduce: false  # TODO: can this be "true"? If yes, is it a free increase in speed
       overlap_param_gather: true
       average_in_collective: false
@@ -308,6 +308,7 @@ policy:
 # Data
 # =============================================================================
 data:
+  max_input_seq_length: null
   shuffle: false  # input data is already shuffled
   num_workers: 1
   train:

@@ -34,7 +34,7 @@ while [[ $# -gt 0 ]]; do
     [[ $# -ge 2 ]] || display_help
     case $1 in
         --config) CONFIG_PATH="$(realpath "$2")"; shift 2 ;;
-        -a|--adv|--advantage|--advantage-estimator) ADV_ESTIMATOR="$2"; shift 2 ;;
+        -a|--a|--adv|--advantage|--advantage-estimator) ADV_ESTIMATOR="$2"; shift 2 ;;
         -e|-r|--exp|--experiment|--resume) EXP_NUM="$2"; shift 2 ;;
         *) display_help ;;
     esac
