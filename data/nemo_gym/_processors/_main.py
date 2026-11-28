@@ -170,7 +170,7 @@ def _merge_commands(batch_size: int) -> list[tuple[str, list[str], list[Path]]]:
     """Build the combined-dataset merge command for each prompt variant, mistral first.
 
     Args:
-        batch_size: Rows per proportionally mixed batch, forwarded as ``--batch-size``.
+        batch_size: Rows per batch, split equally across environments, forwarded as ``--batch-size``.
 
     Returns:
         Two (label, command, outputs) triples, mistral first, then common.
@@ -184,6 +184,8 @@ def _merge_commands(batch_size: int) -> list[tuple[str, list[str], list[Path]]]:
                 str(DATA_DIR / variant),
                 "--batch-size",
                 str(batch_size),
+                "--num-steps",
+                "505",
                 "--output",
                 str(DATA_DIR / variant / f"combined_data_{batch_size}.jsonl"),
             ],
@@ -223,7 +225,7 @@ def main() -> None:
         dest="batch_size",
         type=int,
         required=True,
-        help="Rows per proportionally mixed batch, forwarded to merge_multi_environment_datasets.py.",
+        help="Rows per batch, split equally across environments, forwarded to merge_multi_environment_datasets.py.",
     )
     parser.add_argument(
         "--yes",

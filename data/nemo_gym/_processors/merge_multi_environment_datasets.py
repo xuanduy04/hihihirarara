@@ -8,7 +8,6 @@ import shutil
 import subprocess
 import sys
 from collections.abc import Iterator
-from heapq import heapify, heappop, heappush
 from pathlib import Path
 
 from tqdm.auto import tqdm
@@ -122,34 +121,23 @@ def _load_group_lines(group_name: str, files: list[Path], line_counts: list[int]
     return lines
 
 
-def _mixed_epoch_batches(group_lines: list[list[str]], batch_size: int, seed: int) -> Iterator[list[str]]:
-    """Yield shuffled batches of rows, each batch proportionally mixed across groups.
+def _mixed_epoch_batches(
+    group_lines: list[list[str]], batch_size: int, num_steps: int, seed: int
+) -> Iterator[list[str]]:
+    """Yield *num_steps* shuffled batches of rows, each batch holding the same number of rows from every group.
 
-    Every batch approximates the global group proportions by always drawing from the group with the largest cumulative
-    shortfall, and each group's rows are visited in one seeded permutation order.
+    Each group's rows are visited by running through as many cycles of the group as the steps need, every cycle being
+    a fresh seeded permutation; the last cycle may be cut short.
     """
     rng = random.Random(seed)
-    counts = [len(lines) for lines in group_lines]
-    total = sum(counts)
-    permutations = [list(range(count)) for count in counts]
-    for order in permutations:
-        rng.shuffle(order)
-    used = [0] * len(group_lines)
-
-    for emitted in range(0, total, batch_size):
-        stop = min(emitted + batch_size, total)
-        # Largest cumulative shortfall, in integer arithmetic. The heap
-        # retains the same tie-breaking rule across batch boundaries.
-        quotas = [(used[i] * total - stop * count, i) for i, count in enumerate(counts) if used[i] < count]
-        heapify(quotas)
-        batch = []
-        for _ in range(stop - emitted):
-            score, group = heappop(quotas)
-            batch.append(group_lines[group][permutations[group][used[group]]])
-            used[group] += 1
-            if used[group] < counts[group]:
-                heappush(quotas, (score + total, group))
-
+    per_group = batch_size // len(group_lines)
+    need = num_steps * per_group
+    orders = [
+        [line for _ in range((need + len(lines) - 1) // len(lines)) for line in rng.sample(lines, len(lines))]
+        for lines in group_lines
+    ]
+    for start in range(0, need, per_group):
+        batch = [line for order in orders for line in order[start : start + per_group]]
         rng.shuffle(batch)
         yield batch
 
@@ -168,7 +156,7 @@ def main() -> None:
     sys.argv = _preprocess_underscore_args(sys.argv)
 
     parser = argparse.ArgumentParser(
-        description="Shuffle grouped JSONL datasets in RAM and write one proportionally mixed epoch."
+        description="Shuffle grouped JSONL datasets in RAM and write --num-steps batches split equally across groups."
     )
     parser.add_argument(
         "input_dir", type=Path, help="Input directory whose subdirectories each hold one environment's JSONL file(s)."
@@ -180,7 +168,10 @@ def main() -> None:
         dest="batch_size",
         type=int,
         required=True,
-        help="Rows per proportionally mixed batch (default: %(default)s).",
+        help="Rows per batch, split equally across groups (default: %(default)s).",
+    )
+    parser.add_argument(
+        "--num-steps", type=int, default=505, help="Batches (training steps) to write (default: %(default)s)."
     )
     parser.add_argument(
         "--output",
@@ -205,6 +196,8 @@ def main() -> None:
 
     if args.batch_size <= 0:
         parser.error(f"Batch size must be a positive integer, got: {args.batch_size}")
+    if args.num_steps <= 0:
+        parser.error(f"Number of steps must be a positive integer, got: {args.num_steps}")
 
     output_path: Path = (
         args.output.resolve() if args.output is not None else input_dir / f"rl_mixed_bs{args.batch_size}.jsonl"
@@ -214,6 +207,8 @@ def main() -> None:
         groups = _resolve_group_files(input_dir)
     except FileNotFoundError as exc:
         parser.error(str(exc))
+    if args.batch_size % len(groups):
+        parser.error(f"Batch size must be divisible by the number of groups ({len(groups)}), got: {args.batch_size}")
 
     input_files = [path for _, files in groups for path in files]
     if output_path in [path.resolve() for path in input_files]:
@@ -253,15 +248,15 @@ def main() -> None:
 
     sample_counts = [len(lines) for lines in group_lines]
     total_samples = sum(sample_counts)
-    if total_samples == 0:
-        parser.error("All source files contain only blank lines.")
+    if 0 in sample_counts:
+        parser.error("Every group needs at least one non-blank line.")
     for (name, _), sample_count in zip(groups, sample_counts):
         logger.info(f"{name}: {sample_count:,} samples ({sample_count / total_samples:.2%})")
 
-    batches = _mixed_epoch_batches(group_lines, args.batch_size, args.seed)
-    _write_output(output_path, batches, total_samples)
-    batch_count = (total_samples + args.batch_size - 1) // args.batch_size
-    logger.info(f"Done - wrote {total_samples:,} sample(s) in {batch_count:,} batch(es) to {output_path}")
+    total_rows = args.num_steps * args.batch_size
+    batches = _mixed_epoch_batches(group_lines, args.batch_size, args.num_steps, args.seed)
+    _write_output(output_path, batches, total_rows)
+    logger.info(f"Done - wrote {total_rows:,} sample(s) in {args.num_steps:,} batch(es) to {output_path}")
 
 
 if __name__ == "__main__":
